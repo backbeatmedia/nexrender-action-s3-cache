@@ -24,6 +24,13 @@ async function findCachedAsset(asset, settings, workpath, client, bucket, key) {
         settings.logger.log(`> Cached file found at s3://${bucket}/${key}${fileName}`);
         settings.logger.log(`> Old source: ${asset.src}`);
 
+    } catch (err) {
+        settings.logger.log('> Asset not found in cache');
+        return;
+    }
+
+    try {
+
         const downloadable = await response.Body.transformToStream();
         
         await new Promise((resolve, reject) => {
@@ -32,13 +39,12 @@ async function findCachedAsset(asset, settings, workpath, client, bucket, key) {
                 .on('close', () => resolve())
         })
 
-    } catch (err) {
-        settings.logger.log('> cache restore unsuccessful');
-        return;
-    }
+        asset.src = `file://${filePath}`;
+        settings.logger.log(`> New source: ${asset.src}`);
 
-    asset.src = `file://${filePath}`;
-    settings.logger.log(`> New source: ${asset.src}`);
+    } catch (err) {
+        settings.logger.log('> cache restore attempt unsuccessful');
+    }
 
 }
 
