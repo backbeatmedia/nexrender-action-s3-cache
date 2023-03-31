@@ -9,10 +9,10 @@ to other instances rendering the same material
 
 ## Usage
 
-When creating your render job provide this module in the `predownload` action:
+When creating your render job provide this module in the `predownload` action only:
 
 ## Additional Params
-The usual S3 parameters are required. The instance role must include permissions to PUT GET and LIST the bucket, and the bucket policy must grant access to the instance
+The usual S3 parameters are required. The instance role must include permissions to PUT GET and LIST the bucket, and the bucket policy must grant access to the instance. You can include credentials in the `config` element, however best practice is to use an IAM instance role.
 
 ```js
 // job.json
@@ -21,11 +21,11 @@ The usual S3 parameters are required. The instance role must include permissions
         "predownload": [
             {
                 "module": "@nexrender/action-cache",
-                "params": {
-                    "region": "eu-west-1",
-                    "bucket": "name-of-bucket",
-                    "key": 'Key/for/cache/root'
-                }
+                "config": {
+                    "region": "eu-west-1"
+                },
+                "bucket": "name-of-bucket",
+                "key": 'Key/for/cache/root/'
             }
         ]
     }

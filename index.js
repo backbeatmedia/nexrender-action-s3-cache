@@ -1,87 +1,135 @@
 const fs = require('fs');
 const path = require('path');
 
-async function findCachedAsset(asset, settings, cacheDirectory, ttl){
+const { S3Client, GetObjectCommand, PutObjectCommand, } = require("@aws-sdk/client-s3");
+
+async function findCachedAsset(asset, settings, workpath, client, bucket, key) {
     if (asset.src.startsWith('file://')) {
         settings.logger.log(`> Skipping cache for ${asset.src}; local file protocol is being used`);
         return;
     }
 
     const fileName = path.basename(asset.src);
+    const filePath = path.join(workpath, fileName);
 
+    if (!key.endsWith('/')) key += '/';
 
-    // if file is in S3
-    // retrieve it to the workpath
-    // change asset source to the file:// location
+    try {
 
-    settings.logger.log(`> Cached file found at ${maybeCachedFileLocation}`);
-    settings.logger.log(`> Old source: ${asset.src}`);
-    asset.src = `file://${maybeCachedFileLocation}`;
-    settings.logger.log(`> New source: ${asset.src}`);
-}
+        const response = await client.send(new GetObjectCommand({
+            Bucket: bucket,
+            Key: `${key}${fileName}`
+        }));
 
-const predownload = async (job, settings, { cacheDirectory, ttl, cacheAssets }) => {
-    
-    // add self to post-download actions
-    
-    // Job template
-    await findCachedAsset(job.template, settings, cacheDirectory, ttl);
+        settings.logger.log(`> Cached file found at s3://${bucket}/${key}${fileName}`);
+        settings.logger.log(`> Old source: ${asset.src}`);
 
+        const downloadable = await response.Body.transformToStream();
+        
+        await new Promise((resolve, reject) => {
+            downloadable.pipe(fs.createWriteStream(filePath))
+                .on('error', err => reject(err))
+                .on('close', () => resolve())
+        })
 
-    // Job assets
-    for(const asset of job.assets){
-        // Only asset types that can be downloaded files
-        if(['image', 'audio', 'video', 'script', 'static'].includes(asset.type)){
-            await findCachedAsset(asset, settings, cacheDirectory, ttl);
-        }
-    }
-
-}
-
-async function saveCache(asset, settings, workpath, cacheDirectory){
-    if (asset.src.startsWith('file://')) {
-        settings.logger.log(`> Skipping cache for ${asset.src}; local file protocol is being used`);
+    } catch (err) {
+        settings.logger.log('> cache restore unsuccessful');
         return;
     }
 
-    if (!fs.existsSync(cacheDirectory)) {
-        settings.logger.log(`> Creating cache directory at ${cacheDirectory}`);
-        fs.mkdirSync(cacheDirectory);
+    asset.src = `file://${filePath}`;
+    settings.logger.log(`> New source: ${asset.src}`);
+
+}
+
+const predownload = async (job, settings, { config, key, bucket }) => {
+
+    // connect to S3
+    const client = new S3Client(config);
+
+    // add self to post-download actions
+    if (!job.postdownload) job.postdownload = [];
+    job.postdownload.push(
+        {
+            "module": __filename,
+            "config": config,
+            "bucket": bucket,
+            "key": key
+        }
+    );
+
+    // Job template
+    await findCachedAsset(job.template, settings, job.workpath, client, bucket, key);
+
+    // Job assets
+    for (const asset of job.assets) {
+        // Only asset types that can be downloaded files
+        if (['image', 'audio', 'video', 'script', 'static'].includes(asset.type)) {
+            await findCachedAsset(asset, settings, job.workpath, client, bucket, key);
+        }
+    }
+
+    client.destroy();
+
+}
+
+async function saveCache(asset, settings, workpath, client, bucket, key) {
+    if (asset.src.startsWith('file://')) {
+        settings.logger.log(`> Skipping cache for ${asset.src}; local file protocol is being used`);
+        return;
     }
 
     const fileName = path.basename(asset.src);
     const from = path.join(workpath, fileName);
-    const to = path.join(cacheDirectory, fileName);
-    settings.logger.log(`> Copying from ${from} to ${to}`);
 
-    fs.copyFileSync(from, to);
+    if (!key.endsWith('/')) key += '/';
+
+    settings.logger.log(`> Saving from ${from} to s3://${bucket}/${key}${fileName}`);
+
+    try {
+
+        await client.send(new PutObjectCommand({
+            Body: from,
+            Bucket: bucket,
+            Key: `${key}${fileName}`
+        }));
+
+    } catch (err) {
+        settings.logger.log('> Save unsuccessful');
+    }
 }
 
-const postdownload = async (job, settings, { cacheDirectory, cacheAssets }) => {
+const postdownload = async (job, settings, { config, key, bucket }) => {
+
+    // connect to S3
+    const client = new S3Client(config);
+
     // Job template
-    await saveCache(job.template, settings, job.workpath, cacheDirectory);
+    await saveCache(job.template, settings, job.workpath, client, bucket, key);
 
     // Job assets
-    for(const asset of job.assets){
+    for (const asset of job.assets) {
         // Only asset types that can be downloaded files
-        if(['image', 'audio', 'video', 'script', 'static'].includes(asset.type)){
-            await saveCache(asset, settings, job.workpath, cacheDirectory);
+        if (['image', 'audio', 'video', 'script', 'static'].includes(asset.type)) {
+            await saveCache(asset, settings, job.workpath, client, bucket, key);
         }
     }
 
+    client.destroy();
 }
 
-module.exports = (job, settings, { params }, type) => {
-    if (!params) {
+module.exports = (job, settings, { config, key, bucket }, type) => {
+
+    if (!params || !key || !bucket) {
         throw new Error(`S3 parameters not provided.`);
     }
 
     if (type === 'predownload') {
-        return predownload(job, settings, { cacheDirectory, ttl, cacheAssets }, type);
+        return predownload(job, settings, { config, key, bucket }, type);
     }
 
     if (type === 'postdownload') {
-        return postdownload(job, settings, { cacheDirectory, cacheAssets }, type);
+        return postdownload(job, settings, { config, key, bucket }, type);
     }
 
     return Promise.resolve();
