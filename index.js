@@ -12,7 +12,7 @@ async function findCachedAsset(asset, settings, workpath, client, bucket, key) {
     const fileName = path.basename(asset.src);
     const filePath = path.join(workpath, fileName);
 
-    if (!Boolean(key) && !key.endsWith('/')) key += '/'; // non-blank keys must end with '/'
+    if (Boolean(key) && !key.endsWith('/')) key += '/'; // non-blank keys must end with '/'
 
     try {
 
@@ -88,7 +88,7 @@ async function saveCache(asset, settings, workpath, client, bucket, key) {
     const fileName = path.basename(asset.src);
     const from = path.join(workpath, fileName);
 
-    if (!Boolean(key) && !key.endsWith('/')) key += '/'; // non-blank keys must end with '/'
+    if (Boolean(key) && !key.endsWith('/')) key += '/'; // non-blank keys must end with '/'
 
     settings.logger.log(`> Saving from ${from} to s3://${bucket}/${key}${fileName}`);
 
