@@ -128,7 +128,7 @@ module.exports = (job, settings, { config, key, bucket }, type) => {
 
     if (!config || !config.region || !bucket) throw new Error("S3 parameters insufficient.");
 
-    if (!key) key=""; // optional key - defaults to bucket root, denoted by blank string
+    if (!key) var key=""; // optional key - defaults to bucket root, denoted by blank string
 
     if (type === 'predownload') return predownload(job, settings, { config, key, bucket }, type);
     
