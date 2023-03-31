@@ -9,7 +9,7 @@ to other instances rendering the same material
 
 ## Usage
 
-When creating your render job provide this module in the `predownload` action only:
+When creating your render job provide this module in the `predownload` action only. The assets will be permanently cached unless you set up an object lifecycle policy on the bucket, to remove them after a given time.
 
 ## Additional Params
 The usual S3 parameters are required. The instance role must include permissions to PUT GET and LIST the bucket, and the bucket policy must grant access to the instance. You can include credentials in the `config` element, however best practice is to use an IAM instance role.
