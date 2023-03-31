@@ -1,7 +1,7 @@
 const fs = require('fs');
 const path = require('path');
 
-const { S3Client, GetObjectCommand, PutObjectCommand, } = require("@aws-sdk/client-s3");
+const { S3Client, GetObjectCommand, PutObjectCommand } = require("@aws-sdk/client-s3");
 
 async function findCachedAsset(asset, settings, workpath, client, bucket, key) {
     if (asset.src.startsWith('file://')) {
@@ -12,7 +12,7 @@ async function findCachedAsset(asset, settings, workpath, client, bucket, key) {
     const fileName = path.basename(asset.src);
     const filePath = path.join(workpath, fileName);
 
-    if (!key.endsWith('/')) key += '/';
+    if (!Boolean(key) && !key.endsWith('/')) key += '/'; // non-blank keys must end with '/'
 
     try {
 
@@ -82,7 +82,7 @@ async function saveCache(asset, settings, workpath, client, bucket, key) {
     const fileName = path.basename(asset.src);
     const from = path.join(workpath, fileName);
 
-    if (!key.endsWith('/')) key += '/';
+    if (!Boolean(key) && !key.endsWith('/')) key += '/'; // non-blank keys must end with '/'
 
     settings.logger.log(`> Saving from ${from} to s3://${bucket}/${key}${fileName}`);
 
@@ -120,17 +120,13 @@ const postdownload = async (job, settings, { config, key, bucket }) => {
 
 module.exports = (job, settings, { config, key, bucket }, type) => {
 
-    if (!params || !key || !bucket) {
-        throw new Error(`S3 parameters not provided.`);
-    }
+    if (!config || !config.region || !bucket) throw new Error("S3 parameters insufficient.");
 
-    if (type === 'predownload') {
-        return predownload(job, settings, { config, key, bucket }, type);
-    }
+    if (!key) key=""; // optional key - defaults to bucket root, denoted by blank string
 
-    if (type === 'postdownload') {
-        return postdownload(job, settings, { config, key, bucket }, type);
-    }
-
+    if (type === 'predownload') return predownload(job, settings, { config, key, bucket }, type);
+    
+    if (type === 'postdownload') return postdownload(job, settings, { config, key, bucket }, type);
+    
     return Promise.resolve();
 }

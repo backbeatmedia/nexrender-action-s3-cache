@@ -25,7 +25,7 @@ The usual S3 parameters are required. The instance role must include permissions
                     "region": "eu-west-1"
                 },
                 "bucket": "name-of-bucket",
-                "key": 'Key/for/cache/root/'
+                "key": 'Key/for/cache/root/' // optional
             }
         ]
     }
