@@ -1,0 +1,25 @@
+{
+  "name": "nexrender-action-s3-cache",
+  "version": "1.0.0",
+  "description": "Cache your template source and assets to a local S3 bucket and use it on future runs, and make available to other instances rendering the same material",
+  "main": "index.js",
+  "directories": {
+    "test": "test"
+  },
+  "scripts": {
+    "test": "test/test.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/backbeatmedia/nexrender-action-s3-cache.git"
+  },
+  "author": "",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/backbeatmedia/nexrender-action-s3-cache/issues"
+  },
+  "homepage": "https://github.com/backbeatmedia/nexrender-action-s3-cache#readme",
+  "dependencies": {
+    "@aws-sdk/client-s3": "^3.304.0"
+  }
+}

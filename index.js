@@ -11,12 +11,14 @@ async function findCachedAsset(asset, settings, workpath, client, bucket, key) {
 
     const fileName = path.basename(asset.src);
     const filePath = path.join(workpath, fileName);
+    let getObjectResponse;
 
     if (Boolean(key) && !key.endsWith('/')) key += '/'; // non-blank keys must end with '/'
+    // console.log(`key = '${key}`);
 
     try {
 
-        const response = await client.send(new GetObjectCommand({
+        getObjectResponse = await client.send(new GetObjectCommand({
             Bucket: bucket,
             Key: `${key}${fileName}`
         }));
@@ -26,12 +28,13 @@ async function findCachedAsset(asset, settings, workpath, client, bucket, key) {
 
     } catch (err) {
         settings.logger.log('> Asset not found in cache');
+        //settings.logger.log(`> ${err.stack}`); // there will always be an error here; this is expected behaviour on asset not found
         return;
     }
 
     try {
 
-        const downloadable = await response.Body.transformToStream();
+        const downloadable = await getObjectResponse.Body;
         
         await new Promise((resolve, reject) => {
             downloadable.pipe(fs.createWriteStream(filePath))
@@ -44,6 +47,7 @@ async function findCachedAsset(asset, settings, workpath, client, bucket, key) {
 
     } catch (err) {
         settings.logger.log('> cache restore attempt unsuccessful');
+        settings.logger.log(`> ${err.stack}`);
     }
 
 }

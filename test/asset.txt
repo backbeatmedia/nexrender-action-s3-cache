@@ -1,0 +1,1 @@
+/Users/admin/git/nexrender-action-s3-cache/test/asset.txt
