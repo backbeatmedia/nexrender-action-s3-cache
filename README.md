@@ -22,7 +22,7 @@ The module confirms that there are entries for `config.region` and `bucket`.
     "actions": {
         "predownload": [
             {
-                "module": "@nexrender/action-cache",
+                "module": "nexrender-action-s3-cache",
                 "config": {
                     "region": "eu-west-1"
                 },
