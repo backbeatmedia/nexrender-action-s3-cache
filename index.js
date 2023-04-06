@@ -106,6 +106,7 @@ async function saveCache(asset, settings, workpath, client, bucket, key) {
 
     } catch (err) {
         settings.logger.log('> Save unsuccessful');
+        settings.logger.log(`> ${err.stack}`);
     }
 }
 
