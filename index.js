@@ -52,16 +52,16 @@ async function findCachedAsset(asset, settings, workpath, client, bucket, key) {
 
 }
 
-const predownload = async (job, settings, { config, bucket, key }) => {
+const predownload = async (job, settings, { config, key, bucket }) => {
 
     // connect to S3
     const client = new S3Client(config);
 
     // add self to post-download actions
-    if (!job.postdownload) job.postdownload = [];
-    job.postdownload.push(
+    if (!job.actions.postdownload) job.actions.postdownload = [];
+    job.actions.postdownload.push(
         {
-            'module': 'nexrender-action-s3-cache',
+            'module': __filename,
             'config': config,
             'bucket': bucket,
             'key': key
