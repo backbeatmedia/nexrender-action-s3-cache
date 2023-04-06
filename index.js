@@ -35,7 +35,7 @@ async function findCachedAsset(asset, settings, workpath, client, bucket, key) {
     try {
 
         const downloadable = await getObjectResponse.Body;
-        
+
         await new Promise((resolve, reject) => {
             downloadable.pipe(fs.createWriteStream(filePath))
                 .on('error', err => reject(err))
@@ -61,14 +61,14 @@ const predownload = async (job, settings, { config, key, bucket }) => {
     if (!job.postdownload) job.postdownload = [];
     job.postdownload.push(
         {
-            module: __filename,
+            module: 'nexrender-action-s3-cache',
             config: config,
             bucket: bucket,
             key: key
         }
     );
 
-        console.log(`postdownload = ${JSON.stringify(job.postdownload)}`);
+    console.log(`postdownload = ${JSON.stringify(job.postdownload)}`);
 
     // Job template
     await findCachedAsset(job.template, settings, job.workpath, client, bucket, key);
@@ -135,11 +135,11 @@ module.exports = (job, settings, { config, key, bucket }, type) => {
 
     if (!config || !config.region || !bucket) throw new Error("S3 parameters insufficient.");
 
-    if (!Boolean(key)) var key=""; // optional key - defaults to bucket root, denoted by blank string
+    if (!Boolean(key)) var key = ""; // optional key - defaults to bucket root, denoted by blank string
 
     if (type === 'predownload') return predownload(job, settings, { config, key, bucket }, type);
-    
+
     if (type === 'postdownload') return postdownload(job, settings, { config, key, bucket }, type);
-    
+
     return Promise.resolve();
 }
