@@ -28,7 +28,7 @@ async function findCachedAsset(asset, settings, workpath, client, bucket, key) {
 
     } catch (err) {
         settings.logger.log('> Asset not found in cache');
-        //settings.logger.log(`> ${err.stack}`); // there will always be an error here; this is expected behaviour on asset not found
+        settings.logger.log(`> ${err.stack}`); // there will always be an error here; this is expected behaviour on asset not found
         return;
     }
 
@@ -61,10 +61,10 @@ const predownload = async (job, settings, { config, key, bucket }) => {
     if (!job.postdownload) job.postdownload = [];
     job.postdownload.push(
         {
-            "module": __filename,
-            "config": config,
-            "bucket": bucket,
-            "key": key
+            module: __filename,
+            config: config,
+            bucket: bucket,
+            key: key
         }
     );
 
