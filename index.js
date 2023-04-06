@@ -9,8 +9,17 @@ async function findCachedAsset(asset, settings, workpath, client, bucket, key) {
         return;
     }
 
-    const fileName = path.basename(asset.src); //.replace(/[^a-z0-9]/gi, '_').toLowerCase();
-    const filePath = path.join(workpath, fileName);
+    // what will thect object be called on s3,if it's there?
+    const objectName = encodeURI(asset.src);
+
+    // where should it be stored locally (using code from the download module)?
+    destName = path.basename(asset.src)
+    destName = destName.indexOf('?') !== -1 ? destName.slice(0, destName.indexOf('?')) : destName;
+    /* ^ remove possible query search string params ^ */
+    destName = decodeURI(destName) /* < remove/decode any special URI symbols within filename */
+
+    const filePath = path.join(workpath, destName);
+
     let getObjectResponse;
 
     if (Boolean(key) && !key.endsWith('/')) key += '/'; // non-blank keys must end with '/'
@@ -20,10 +29,10 @@ async function findCachedAsset(asset, settings, workpath, client, bucket, key) {
 
         getObjectResponse = await client.send(new GetObjectCommand({
             Bucket: bucket,
-            Key: `${key}${encodeURIComponent(fileName)}}`
+            Key: `${key}${objectName}`
         }));
 
-        settings.logger.log(`> Cached file found at s3://${bucket}/${key}${encodeURIComponent(fileName)}}`);
+        settings.logger.log(`> Cached file found at s3://${bucket}/${key}${objectName}`);
         settings.logger.log(`> Old source: ${asset.src}`);
 
     } catch (err) {
@@ -91,20 +100,22 @@ async function saveCache(asset, settings, workpath, client, bucket, key) {
         return;
     }
 
-    const fileName = path.basename(asset.src); //.replace(/[^a-z0-9]/gi, '_').toLowerCase();
-    const from = path.join(workpath, fileName);
-    const blob = fs.readFileSync(from)
+    // encode a name for the file at rest on S3
+    const objectName = encodeURI(asset.src);
+
+    // locate the local file and make a stream
+    const blob = fs.readFileSync(asset.dest)
 
     if (Boolean(key) && !key.endsWith('/')) key += '/'; // non-blank keys must end with '/'
 
-    settings.logger.log(`> Saving from ${from} to s3://${bucket}/${key}${encodeURIComponent(fileName)}`);
+    settings.logger.log(`> Saving from ${basename(asset.dest)} to s3://${bucket}/${key}${objectName}`);
 
     try {
 
         await client.send(new PutObjectCommand({
             Body: blob,
             Bucket: bucket,
-            Key: `${key}${encodeURIComponent(fileName)}}`
+            Key: `${key}${objectName}`
         }));
 
     } catch (err) {
