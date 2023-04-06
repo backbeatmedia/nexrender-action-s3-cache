@@ -9,7 +9,7 @@ async function findCachedAsset(asset, settings, workpath, client, bucket, key) {
         return;
     }
 
-    const fileName = path.basename(asset.src);
+    const fileName = path.basename(asset.src).replace(/[^a-z0-9]/gi, '_').toLowerCase();
     const filePath = path.join(workpath, fileName);
     let getObjectResponse;
 
@@ -91,7 +91,7 @@ async function saveCache(asset, settings, workpath, client, bucket, key) {
         return;
     }
 
-    const fileName = path.basename(asset.src);
+    const fileName = path.basename(asset.src).replace(/[^a-z0-9]/gi, '_').toLowerCase();
     const from = path.join(workpath, fileName);
 
     if (Boolean(key) && !key.endsWith('/')) key += '/'; // non-blank keys must end with '/'
