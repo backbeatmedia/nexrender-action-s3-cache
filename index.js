@@ -77,8 +77,6 @@ const predownload = async (job, settings, { config, key, bucket }) => {
         }
     );
 
-    console.log(`postdownload = ${JSON.stringify(job.postdownload)}`);
-
     // Job template
     await findCachedAsset(job.template, settings, job.workpath, client, bucket, key);
 
@@ -108,7 +106,7 @@ async function saveCache(asset, settings, workpath, client, bucket, key) {
 
     if (Boolean(key) && !key.endsWith('/')) key += '/'; // non-blank keys must end with '/'
 
-    settings.logger.log(`> Saving from ${basename(asset.dest)} to s3://${bucket}/${key}${objectName}`);
+    settings.logger.log(`> Saving from ${path.basename(asset.dest)} to s3://${bucket}/${key}${objectName}`);
 
     try {
 
