@@ -9,7 +9,7 @@ async function findCachedAsset(asset, settings, workpath, client, bucket, key) {
         return;
     }
 
-    const fileName = path.basename(asset.src).replace(/[^a-z0-9]/gi, '_').toLowerCase();
+    const fileName = path.basename(asset.src); //.replace(/[^a-z0-9]/gi, '_').toLowerCase();
     const filePath = path.join(workpath, fileName);
     let getObjectResponse;
 
@@ -20,10 +20,10 @@ async function findCachedAsset(asset, settings, workpath, client, bucket, key) {
 
         getObjectResponse = await client.send(new GetObjectCommand({
             Bucket: bucket,
-            Key: `${key}${fileName}`
+            Key: `${key}${encodeURIComponent(fileName)}}`
         }));
 
-        settings.logger.log(`> Cached file found at s3://${bucket}/${key}${fileName}`);
+        settings.logger.log(`> Cached file found at s3://${bucket}/${key}${encodeURIComponent(fileName)}}`);
         settings.logger.log(`> Old source: ${asset.src}`);
 
     } catch (err) {
@@ -91,19 +91,20 @@ async function saveCache(asset, settings, workpath, client, bucket, key) {
         return;
     }
 
-    const fileName = path.basename(asset.src).replace(/[^a-z0-9]/gi, '_').toLowerCase();
+    const fileName = path.basename(asset.src); //.replace(/[^a-z0-9]/gi, '_').toLowerCase();
     const from = path.join(workpath, fileName);
+    const blob = fs.readFileSync(from)
 
     if (Boolean(key) && !key.endsWith('/')) key += '/'; // non-blank keys must end with '/'
 
-    settings.logger.log(`> Saving from ${from} to s3://${bucket}/${key}${fileName}`);
+    settings.logger.log(`> Saving from ${from} to s3://${bucket}/${key}${encodeURIComponent(fileName)}`);
 
     try {
 
         await client.send(new PutObjectCommand({
-            Body: from,
+            Body: blob,
             Bucket: bucket,
-            Key: `${key}${fileName}`
+            Key: `${key}${encodeURIComponent(fileName)}}`
         }));
 
     } catch (err) {
