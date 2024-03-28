@@ -9,8 +9,8 @@ async function findCachedAsset(asset, settings, workpath, client, bucket, key) {
         return;
     }
 
-    // what will thect object be called on s3,if it's there?
-    const objectName = encodeURI(asset.src);
+    // what will the object be called on s3,if it's there?
+    const objectName = encodeURI(asset.src).split('?')[0];
 
     // where should it be stored locally (using code from the download module)?
     destName = path.basename(asset.src)
@@ -98,8 +98,8 @@ async function saveCache(asset, settings, workpath, client, bucket, key) {
         return;
     }
 
-    // encode a name for the file at rest on S3
-    const objectName = encodeURI(asset.src);
+    // encode a name for the file at rest on S3, removing any signed URL extras
+    const objectName = encodeURI(asset.src).split('?')[0];
 
     // locate the local file and make a stream
     const blob = fs.readFileSync(asset.dest)
